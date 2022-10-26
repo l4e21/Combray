@@ -1,2 +1,2 @@
-# combinators
+# Combray
 Yet Another Parser Combinator Library
