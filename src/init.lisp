@@ -1,4 +1,4 @@
-(in-package :combinator)
+(in-package :combray)
 
 ;; Char lists
 (deftype char-list ()

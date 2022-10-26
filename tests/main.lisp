@@ -1,10 +1,10 @@
-(defpackage combinator/tests/main
+(defpackage combray/tests/main
   (:use :cl
-        :combinator
+        :combray
         :fiveam)
   (:export #:debug! #:run! #:main-suite #:test-main-suite))
 
-(in-package :combinator/tests/main)
+(in-package :combray/tests/main)
 
 (def-suite main-suite)
 (in-suite main-suite)
@@ -17,9 +17,9 @@
     (is
      (and
       (typep output 't-state)
-      (with-slots ((line combinator::line)
-                   (remaining combinator::remaining)
-                   (result combinator::result))
+      (with-slots ((line combray::line)
+                   (remaining combray::remaining)
+                   (result combray::result))
           output
         (and
          (= line 1)
@@ -41,7 +41,7 @@
          (let ((r1
                  (funcall parser (make-t-state 1 (list #\a #\linefeed) nil))))
            (and (typep r1 't-state)
-                (= 2 (combinator::line r1))))
+                (= 2 (combray::line r1))))
          (typep
           (funcall parser (make-t-state 1 (list #\a #\b) nil))
           'nil-state)))))
@@ -61,11 +61,10 @@
                                             (pchar #\i)))))
          (r1
            (funcall parser (make-t-state 1 (list #\h #\i #\t) nil))))
-    (print-object r1 t)
     (is
      (and (typep r1 't-state)
-          (combinator::result r1)
-          (equal :string (combinator::tag (car (combinator::result r1))))))))
+          (combray::result r1)
+          (equal :string (combray::tag (car (combray::result r1))))))))
 
 (test poptional
   (let ((example (funcall (poptional (pchar #\h))

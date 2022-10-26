@@ -1,4 +1,4 @@
-(defpackage combinator
+(defpackage combray
   (:use :cl :serapeum)
   (:export #:prepare-string-for-parsing
            #:t-state

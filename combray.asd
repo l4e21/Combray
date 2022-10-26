@@ -1,4 +1,4 @@
-(defsystem "combinator"
+(defsystem "combray"
   :version "0.1.0"
   :author ""
   :license ""
@@ -10,15 +10,15 @@
                  (:file "init")
                  (:file "parser"))))
   :description ""
-  :in-order-to ((test-op (test-op "combinator/tests"))))
+  :in-order-to ((test-op (test-op "combray/tests"))))
 
-(defsystem "combinator/tests"
+(defsystem "combray/tests"
   :author ""
   :license ""
-  :depends-on ("combinator"
+  :depends-on ("combray"
                "fiveam")
   :components ((:module "tests"
                 :components
                 ((:file "main"))))
-  :description "Test system for combinator"
-  :perform (test-op (op s) (symbol-call :combinator/tests/main '#:test-main-suite)))
+  :description "Test system for combray"
+  :perform (test-op (op s) (symbol-call :combray/tests/main '#:test-main-suite)))

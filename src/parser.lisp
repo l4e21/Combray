@@ -1,4 +1,4 @@
-(in-package :combinator)
+(in-package :combray)
 
 (-> pchar (character) parser-fn)
 (defun pchar (c)
