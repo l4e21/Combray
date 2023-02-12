@@ -1,9 +1,14 @@
-(in-package :combray)
+(defpackage combray/combinators
+  (:use :cl :serapeum)
+  (:import-from :combray/models :t-state :nil-state :make-t-state :make-nil-state :with-state :state :parser-fn :parser-state :parser-list :remaining :line :result :make-node :content)
+  (:export :pchar :pmany :pchoice :ptag :poptional :pstring))
+
+(in-package :combray/combinators)
 
 (-> pchar (character) parser-fn)
 (defun pchar (c)
   (with-state
-   (with-accessors ((line line)
+    (with-accessors ((line line)
                     (remaining remaining)
                     (result result))
        state
@@ -65,5 +70,26 @@
   (with-state
     (let ((result (funcall parser state)))
       (etypecase-of parser-state result
-        (t-state result)
-        (nil-state state)))))
+        (t-state
+         result)
+        (nil-state
+         (make-t-state
+          (line state)
+          (remaining state)
+          (result state)))))))
+
+(-> pstring (string) parser-fn)
+(defun pstring (s)
+  (with-state
+    (let ((result (funcall (pmany (mapcar #'pchar (coerce s 'list))) (make-t-state
+                                                                      (line state)
+                                                                      (remaining state)
+                                                                      nil))))
+      (etypecase-of parser-state result
+        (t-state
+         (make-t-state (line result)
+                       (remaining result)
+                       (append (result state)
+                               (list (make-node :string (list (coerce (mapcan #'content (result result)) 'string)))))))
+        (nil-state
+         result)))))

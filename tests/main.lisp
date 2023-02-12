@@ -1,25 +1,24 @@
-(defpackage combray/tests/main
-  (:use :cl
-        :combray
-        :fiveam)
-  (:export #:debug! #:run! #:main-suite #:test-main-suite))
+(in-package :combray/tests)
 
-(in-package :combray/tests/main)
+;; NOTE: To run this test file, execute `(asdf:test-system :combray)' in your Lisp.
 
-(def-suite main-suite)
-(in-suite main-suite)
+(fiveam:def-suite combray-suite)
+(fiveam:in-suite combray-suite)
 
-(defun test-main-suite ()
-  (debug! 'main-suite))
+(defun test-combray-suite ()
+  (fiveam:run! 'combray-suite))
+
+(defun debug-combray-suite ()
+  (fiveam:debug! 'combray-suite))
 
 (test prepare-string 
   (let ((output (prepare-string-for-parsing "test")))
     (is
      (and
       (typep output 't-state)
-      (with-slots ((line combray::line)
-                   (remaining combray::remaining)
-                   (result combray::result))
+      (with-slots ((line models::line)
+                   (remaining models::remaining)
+                   (result models::result))
           output
         (and
          (= line 1)
@@ -41,7 +40,7 @@
          (let ((r1
                  (funcall parser (make-t-state 1 (list #\a #\linefeed) nil))))
            (and (typep r1 't-state)
-                (= 2 (combray::line r1))))
+                (= 2 (models::line r1))))
          (typep
           (funcall parser (make-t-state 1 (list #\a #\b) nil))
           'nil-state)))))
@@ -63,10 +62,15 @@
            (funcall parser (make-t-state 1 (list #\h #\i #\t) nil))))
     (is
      (and (typep r1 't-state)
-          (combray::result r1)
-          (equal :string (combray::tag (car (combray::result r1))))))))
-
+          (models::result r1)
+          (equal :string (models::tag (car (models::result r1))))))))
+-
 (test poptional
   (let ((example (funcall (poptional (pchar #\h))
                           (make-t-state 1 (list #\a) nil))))
-    (is (= 1 1))))
+    (is (equal (list #\a) (models::remaining example)))))
+
+(test pstring
+  (let ((example (funcall (pstring "hi")
+                          (make-t-state 1 (list #\h #\i #\t #\h #\e #\r #\e) nil))))
+    (is (equal "hi" (first (models:content (first (last (models::result example)))))))))

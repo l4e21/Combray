@@ -1,4 +1,14 @@
-(in-package :combray)
+(defpackage combray/models
+  (:use :cl :serapeum)
+  (:export #:prepare-string-for-parsing
+           #:t-state
+           #:nil-state
+           #:make-t-state
+           #:make-nil-state
+           #:with-state
+           #:content))
+
+(in-package :combray/models)
 
 ;; Char lists
 (deftype char-list ()
