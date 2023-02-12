@@ -1,7 +1,7 @@
 (defpackage combray/combinators
   (:use :cl :serapeum)
-  (:import-from :combray/models :t-state :nil-state :make-t-state :make-nil-state :with-state :state :parser-fn :parser-state :parser-list :remaining :line :result :make-node :content :tag :update-last-result :replace-tag)
-  (:export :pchar :pmany :pchoice :ptag :poptional :pstring :p* :p+ :pbool :pnum :psym))
+  (:import-from :combray/models :t-state :nil-state :make-t-state :make-nil-state :with-state :state :parser-fn :parser-state :parser-list :remaining :line :result :make-node :content :tag :update-last-result :replace-tag :node :node-list-p)
+  (:export :pchar :pmany :pchoice :ptag :ptagd :poptional :pstring :p* :p+ :pbool :pnum :psym :pmanywords :preplacetag :pnoresult :pwithparens :pwhitespace))
 
 (in-package :combray/combinators)
 
@@ -62,7 +62,27 @@
          (make-t-state (line result)
                        (remaining result)
                        (append (result state)
-                               (list (make-node tag (result result))))))
+                               (list (make-node tag (if (<=  (length (result result)) 1)
+                                                        (first (result result))
+                                                        (result result)))))))
+        (nil-state result)))))
+
+(defun ptagd (tag parser)
+  (with-state
+    (let ((result (funcall parser
+                           (make-t-state (line state)
+                                         (remaining state)
+                                         nil))))
+      (etypecase-of parser-state result
+        (t-state
+         (make-t-state (line result)
+                       (remaining result)
+                       (append (result state)
+                               (list (make-node tag
+                                                (let ((c (mapcar #'content (result result))))
+                                                  (if (<= (length c) 1)
+                                                      (first c)
+                                                      c)))))))
         (nil-state result)))))
 
 (-> poptional (parser-fn) parser-fn)
@@ -117,15 +137,16 @@
         (nil-state
          result)))))
 
-(-> pcoerce (parser-fn) parser-fn)
+(-> pcoerce (parser-fn t) parser-fn)
 (defun pcoerce (parser coercion-fn)
   (tactile:compose
    parser
    (update-last-result (lambda (node)
-                         (make-node (tag node)
-                                    (funcall coercion-fn
-                                             (coerce (mapcar #'content (content node)) 'string)))))))
-
+                         (assure node
+                           (make-node (tag node)
+                                      (funcall coercion-fn
+                                               (coerce (mapcar #'content (content node)) 'string))))))))
+(declaim (type parser-fn pnum))
 (defvar pnum
   (pcoerce
    (ptag
@@ -143,19 +164,21 @@
                     (pchar #\9)))))
    #'parse-integer))
 
+(-> map-bool (string) boolean)
 (defun map-bool (x)
   (cond
     ((string= x "false")
      nil)
     (t t)))
 
+(declaim (type parser-fn pbool))
 (defvar pbool
   (pcoerce (ptag :bool
                  (pchoice (list (pmany (list (pchar #\t) (pchar #\r) (pchar #\u) (pchar #\e)))
                                 (pmany (list (pchar #\f) (pchar #\a) (pchar #\l) (pchar #\s) (pchar #\e))))))
            #'map-bool))
 
-
+(declaim (type parser-fn psym))
 (defvar psym
   (pcoerce
    (ptag
@@ -189,3 +212,42 @@
                     (pchar #\z)
                     (pchar #\-)))))
    #'read-from-string))
+
+(-> pnoresult (parser-fn) parser-fn)
+(defun pnoresult (parser)
+  (with-state
+    (let ((result (funcall parser state)))
+      (etypecase-of parser-state result
+        (t-state (make-t-state
+                  (line result)
+                  (remaining result)
+                  (result state)))
+        (nil-state result)))))
+
+(declaim (type parser-fn pparenleft))
+(defvar pparenleft (pnoresult (pchar #\()))
+
+(declaim (type parser-fn pparenright))
+(defvar pparenright (pnoresult (pchar #\))))
+
+(-> pwithparens (parser-fn) parser-fn)
+(defun pwithparens (parser)
+  (tactile:compose pparenleft parser pparenright))
+
+(-> preplacetag (keyword parser-fn) parser-fn)
+(defun preplacetag (tag parser)
+  (with-state
+    (let ((r (funcall parser state)))
+      (etypecase-of parser-state r
+        (t-state (funcall (update-last-result (partial #'replace-tag tag)) r))
+        (nil-state r)))))
+
+
+(defvar pwhitespace (pnoresult (pchar #\ )))
+
+(-> pmanywords (t) parser-fn)
+(defun pmanywords (parsers)
+  (with-state
+    (if (rest parsers)
+        (funcall (tactile:compose (first parsers) pwhitespace (pmanywords (rest parsers))) state)
+        (funcall (first parsers) state))))

@@ -48,9 +48,10 @@
 (deftype node-list ()
   `(satisfies node-list-p))
 
-(-> node-list-p (list) boolean)
+(-> node-list-p (t) boolean)
 (defun node-list-p (xs)
-  (every (lambda (x) (typep x 'node)) xs))
+  (and (consp xs)
+       (every (lambda (x) (typep x 'node)) xs)))
 
 ;; Parser state
 ;; Nil for error, t for success

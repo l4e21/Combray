@@ -70,10 +70,25 @@
           (models::result r1)
           (equal :string (models::tag (car (models::result r1))))))))
 
+(test ptagd
+  (let* ((parser (ptagd :string (pmany (list (pchar #\h)
+                                             (pchar #\i)))))
+         (parser-2 (ptagd :string (pstring "hi")))
+         (r1
+           (funcall parser (make-t-state 1 (list #\h #\i #\t) nil)))
+         (r2
+           (funcall parser-2 (make-t-state 1 (list #\h #\i #\t) nil))))
+    (is
+     (and (typep r1 't-state)
+          (models:result r1)
+          (equal :string (models:tag (car (models:result r1))))))
+    (is (equal (list #\h #\i) (models:content (car (models:result r1)))))
+    (is (string= "hi" (models:content (car (models:result r2)))))))
+
 (test poptional
   (let ((example (funcall (poptional (pchar #\h))
                           (make-t-state 1 (list #\a) nil))))
-    (is (equal (list #\a) (models::remaining example)))))
+    (is (equal (list #\a) (models:remaining example)))))
 
 (test pstring
   (let ((example (funcall (pstring "hi")
@@ -93,3 +108,24 @@
          (content
           example)))
     (is (eql :bool (tag example)))))
+
+(test psym
+  (let ((example (models:last-result
+                  (funcall psym
+                           (prepare-string-for-parsing "false")))))
+    (is (eql :sym (tag example)))))
+
+(test pnoresult-and-parens
+  (let ((example (funcall (pwithparens (pchar #\a)) (prepare-string-for-parsing "(a)"))))
+    (is (not (models:remaining example)))
+    (is (eql :char (tag (models:last-result example))))))
+
+
+(test preplacetag
+  (let ((example (funcall (preplacetag :directive psym) (prepare-string-for-parsing "directive"))))
+    (is (eql :directive (tag (models:last-result example))))
+    (is (eql 'directive (content (models:last-result example))))))
+
+(test pwithwhitespace
+  (let ((example (funcall (pmanywords (list (pstring "hi") (pstring "there"))) (prepare-string-for-parsing "hi there"))))
+    (is (eql 'models::t-state (class-name (class-of example))))))
