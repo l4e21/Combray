@@ -6,7 +6,13 @@
            #:make-t-state
            #:make-nil-state
            #:with-state
-           #:content))
+           #:content
+           #:tag
+           #:remaining
+           #:line
+           #:result
+           #:last-result
+           #:update-last-result))
 
 (in-package :combray/models)
 
@@ -26,10 +32,9 @@
     :type keyword)
    (content
     :initarg :content
-    :accessor content
-    :type list)))
+    :accessor content)))
 
-(-> make-node (keyword list) 'node)
+(-> make-node (keyword t) node)
 (defun make-node (tag content)
   (make-instance 'node :tag tag :content content))
 
@@ -121,3 +126,20 @@
        (nil-state state)
        (t-state
         ,@body))))
+
+(-> replace-tag (keyword node) node)
+(defun replace-tag (tag node)
+  (make-node tag (content node)))
+
+(-> last-result (parser-state) node)
+(defun last-result (state)
+  (funcall (tactile:compose #'result #'last #'first) state))
+
+(-> modify-last-result (t) parser-fn)
+(defun update-last-result (fn)
+  (with-state
+    (make-t-state
+     (line state)
+     (remaining state)
+     (append (butlast (result state)) (list (funcall fn (last-result state)))))))
+

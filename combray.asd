@@ -2,7 +2,7 @@
   :version "0.1.0"
   :author ""
   :license ""
-  :depends-on (:serapeum)
+  :depends-on (:serapeum :tactile)
   :serial T
   :components ((:module "src"
                 :components

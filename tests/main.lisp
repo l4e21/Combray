@@ -25,6 +25,11 @@
          (equal remaining (list #\t #\e #\s #\t))
          (not result)))))))
 
+(test update-last-result
+  (is (eql :num
+           (tag (last-result (funcall (update-last-result (tactile:partial #'replace-tag :num))
+                                      (make-t-state 1 (list #\a #\b) (list (make-node :char (list #\1))))))))))
+
 
 (test pchar
   (is (typep (funcall (pchar #\a)
@@ -64,7 +69,7 @@
      (and (typep r1 't-state)
           (models::result r1)
           (equal :string (models::tag (car (models::result r1))))))))
--
+
 (test poptional
   (let ((example (funcall (poptional (pchar #\h))
                           (make-t-state 1 (list #\a) nil))))
@@ -73,4 +78,18 @@
 (test pstring
   (let ((example (funcall (pstring "hi")
                           (make-t-state 1 (list #\h #\i #\t #\h #\e #\r #\e) nil))))
-    (is (equal "hi" (first (models:content (first (last (models::result example)))))))))
+    (is (equal "hi" (models:content (models:last-result example))))))
+
+(test pnum
+  (let ((example (funcall pnum (make-t-state 1 (list #\0 #\1 #\2) nil))))
+    (is (eql :number (tag (models:last-result example))))
+    (is (= 12 (content (models:last-result example))))))
+
+(test parse-bool
+  (let ((example (models:last-result
+                  (funcall pbool
+                           (prepare-string-for-parsing "false")))))
+    (is (not
+         (content
+          example)))
+    (is (eql :bool (tag example)))))
