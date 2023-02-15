@@ -115,6 +115,7 @@
 (defun parser-list-p (xs)
   (every (lambda (x) (typep x 'function)) xs))
 
+;; TODO a stream version
 (-> read-in (string) t-state)
 (defun prepare-string-for-parsing (str)
   (make-t-state 1 (coerce str 'list) nil))
