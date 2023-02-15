@@ -5,6 +5,7 @@
            #:nil-state
            #:make-t-state
            #:make-nil-state
+           #:make-node
            #:with-state
            #:content
            #:tag

@@ -1,7 +1,7 @@
 (defpackage combray/combinators
   (:use :cl :serapeum)
   (:import-from :combray/models :t-state :nil-state :make-t-state :make-nil-state :with-state :state :parser-fn :parser-state :parser-list :remaining :line :result :make-node :content :tag :update-last-result :replace-tag :node :node-list-p)
-  (:export :pchar :pmany :pchoice :ptag :ptagd :poptional :pstring :p* :p+ :pbool :pnum :psym :pmanywords :preplacetag :pnoresult :pwithparens :pwhitespace))
+  (:export :pchar :pmany :pchoice :ptag :ptagd :poptional :pstring :p* :p+ :pbool :pnum :psym :pmanywords :preplacetag :pnoresult :pwithparens :pwithsquareparens :pwhitespace :pstr))
 
 (in-package :combray/combinators)
 
@@ -28,6 +28,31 @@
                         remaining
                         (format nil "~%Parsing Error: ~%Line: ~a~%Couldn't parse ~a, expected ~a"
                                 line (first remaining) c)))))))
+
+(-> pcharexcept (character) parser-fn)
+(defun pcharexcept (c)
+  (with-state
+    (with-accessors ((line line)
+                    (remaining remaining)
+                    (result result))
+       state
+     (cond
+       ((not remaining)
+        (make-nil-state line
+                        remaining
+                        (format nil "~%Parsing Error: ~%Line: ~a~%EOF" line)))
+       ((char= c (first remaining))
+        (make-nil-state line
+                        remaining
+                        (format nil "~%Parsing Error: ~%Line: ~a~%Couldn't parse ~a, expected ~a"
+                                line (first remaining) c)))
+       (t
+        (make-t-state (if (char= c #\linefeed)
+                          (+ 1 line)
+                          line)
+                      (rest remaining)
+                      (append result (list (make-node :char (first remaining))))))))))
+
 
 (-> pmany (parser-list) parser-fn)
 (defun pmany (parsers)
@@ -146,13 +171,10 @@
                            (make-node (tag node)
                                       (funcall coercion-fn
                                                (coerce (mapcar #'content (content node)) 'string))))))))
+
 (declaim (type parser-fn pnum))
 (defvar pnum
-  (pcoerce
-   (ptag
-    :number
-    (p+
-     (pchoice (list (pchar #\0)
+  (pchoice (list (pchar #\0)
                     (pchar #\1)
                     (pchar #\2)
                     (pchar #\3)
@@ -161,7 +183,16 @@
                     (pchar #\6)
                     (pchar #\7)
                     (pchar #\8)
-                    (pchar #\9)))))
+                    (pchar #\9))))
+
+
+(declaim (type parser-fn pint))
+(defvar pint
+  (pcoerce
+   (ptag
+    :int
+    (p+
+     pnum))
    #'parse-integer))
 
 (-> map-bool (string) boolean)
@@ -178,13 +209,8 @@
                                 (pmany (list (pchar #\f) (pchar #\a) (pchar #\l) (pchar #\s) (pchar #\e))))))
            #'map-bool))
 
-(declaim (type parser-fn psym))
-(defvar psym
-  (pcoerce
-   (ptag
-    :sym
-    (p+
-     (pchoice (list (pchar #\a)
+(defvar plowercase
+  (pchoice (list (pchar #\a)
                     (pchar #\b)
                     (pchar #\c)
                     (pchar #\d)
@@ -210,7 +236,46 @@
                     (pchar #\x)
                     (pchar #\y)
                     (pchar #\z)
-                    (pchar #\-)))))
+                    (pchar #\-))))
+
+(defvar puppercase
+  (pchoice (list (pchar #\A)
+                    (pchar #\B)
+                    (pchar #\C)
+                    (pchar #\D)
+                    (pchar #\E)
+                    (pchar #\F)
+                    (pchar #\G)
+                    (pchar #\H)
+                    (pchar #\I)
+                    (pchar #\J)
+                    (pchar #\K)
+                    (pchar #\L)
+                    (pchar #\M)
+                    (pchar #\N)
+                    (pchar #\O)
+                    (pchar #\P)
+                    (pchar #\Q)
+                    (pchar #\R)
+                    (pchar #\S)
+                    (pchar #\T)
+                    (pchar #\U)
+                    (pchar #\V)
+                    (pchar #\W)
+                    (pchar #\X)
+                    (pchar #\Y)
+                    (pchar #\Z)
+                    (pchar #\-))))
+
+(defvar pletter
+  (pchoice (list puppercase plowercase)))
+
+(declaim (type parser-fn psym))
+(defvar psym
+  (pcoerce
+   (ptag
+    :sym
+    (p+ pletter))
    #'read-from-string))
 
 (-> pnoresult (parser-fn) parser-fn)
@@ -230,9 +295,21 @@
 (declaim (type parser-fn pparenright))
 (defvar pparenright (pnoresult (pchar #\))))
 
+(declaim (type parser-fn psquareparenleft))
+(defvar psquareparenleft (pnoresult (pchar #\[)))
+
+(declaim (type parser-fn psquareparenright))
+(defvar psquareparenright (pnoresult (pchar #\])))
+
+
 (-> pwithparens (parser-fn) parser-fn)
 (defun pwithparens (parser)
   (tactile:compose pparenleft parser pparenright))
+
+(-> pwithsquareparens (parser-fn) parser-fn)
+(defun pwithsquareparens (parser)
+  (tactile:compose psquareparenleft parser psquareparenright))
+
 
 (-> preplacetag (keyword parser-fn) parser-fn)
 (defun preplacetag (tag parser)
@@ -243,11 +320,41 @@
         (nil-state r)))))
 
 
-(defvar pwhitespace (pnoresult (pchar #\ )))
+(defvar pwhitespace (pnoresult (p* (pchar #\ ))))
 
+;; Parse words separated by whitespace
 (-> pmanywords (t) parser-fn)
 (defun pmanywords (parsers)
-  (with-state
-    (if (rest parsers)
-        (funcall (tactile:compose (first parsers) pwhitespace (pmanywords (rest parsers))) state)
-        (funcall (first parsers) state))))
+  (apply #'tactile:compose (mapcan
+                            (lambda (parser)
+                              (list parser pwhitespace))
+                            parsers)))
+
+(defvar pstr 
+  (pcoerce
+   (ptag
+    :string
+    (pmany
+     (list
+      (pnoresult (pchar #\"))
+      (p* (pcharexcept #\"))
+      (pnoresult (pchar #\")))))))
+
+;; TODO replace read-from-string with a more performant algorithm
+(declaim (type parser-fn pfloat))
+(defvar pfloat
+  (pcoerce
+   (ptag
+    :float
+    (pmany
+     (p+
+      pnum)
+     (pnoresult (pchar #\.))
+     (p+ pnum)))
+   #'read-from-string))
+
+(defvar pbool
+  (pchoice
+   (list
+    (pstring "true")
+    (pstring "false"))))

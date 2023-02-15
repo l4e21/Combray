@@ -39,6 +39,14 @@
                       (make-t-state 1 (list #\b #\a) nil))
              'nil-state)))
 
+(test pcharexcept
+  (is (typep (funcall (pcharexcept #\a)
+                      (make-t-state 1 (list #\b #\a) nil))
+             't-state))
+  (is (typep (funcall (pcharexcept #\a)
+                      (make-t-state 1 (list #\a #\b) nil))
+             'nil-state)))
+
 (test pmany
   (let ((parser (pmany (list (pchar #\a) (pchar #\linefeed)))))
     (is (and
@@ -95,8 +103,8 @@
                           (make-t-state 1 (list #\h #\i #\t #\h #\e #\r #\e) nil))))
     (is (equal "hi" (models:content (models:last-result example))))))
 
-(test pnum
-  (let ((example (funcall pnum (make-t-state 1 (list #\0 #\1 #\2) nil))))
+(test int
+  (let ((example (funcall pint (make-t-state 1 (list #\0 #\1 #\2) nil))))
     (is (eql :number (tag (models:last-result example))))
     (is (= 12 (content (models:last-result example))))))
 
@@ -127,5 +135,6 @@
     (is (eql 'directive (content (models:last-result example))))))
 
 (test pwithwhitespace
-  (let ((example (funcall (pmanywords (list (pstring "hi") (pstring "there"))) (prepare-string-for-parsing "hi there"))))
+  (let ((example (funcall (pmanywords (list (pstring "hi") (pstring "there")))
+                          (prepare-string-for-parsing "hi  there  you "))))
     (is (eql 'models::t-state (class-name (class-of example))))))
