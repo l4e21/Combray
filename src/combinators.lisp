@@ -1,6 +1,6 @@
 (defpackage combray/combinators
   (:use :cl :serapeum :combray/models)
-  (:export :pchar :pconcat))
+  (:export :pchar :pconcat :plet*))
 
 (in-package :combray/combinators)
 
@@ -62,17 +62,30 @@
                      remaining
                      nil))))
 
-(defmacro plet*-aux (state-var bindings &body body)
-  (if (null bindings)
-      `(progn ,@body)
-      (destructuring-bind ((var parser) &rest remaining-bindings) bindings
-        `(funcall (lambda (,var)
-                    (plet*-aux ,var ,(cdr bindings) ,@body))
-                  (funcall ,parser ,state-var)))))
-
 (defmacro plet* (bindings &body body)
   `(with-state
-     (plet*-aux ,'state ,bindings ,@body)))
+     ,(let ((r-state (gensym)))
+        (if (null bindings)
+            `(make-t-state
+              line
+              column
+              remaining
+              ,@body)
+            (destructuring-bind ((var parser) &rest remaining-bindings) bindings
+              `(let ((,r-state (funcall ,parser state)))
+                 (funcall (lambda (,var)
+                            (funcall
+                             (plet* ,remaining-bindings ,@body)
+                             ,r-state))
+                          (etypecase-of parser-state ,r-state
+                            (t-state (result ,r-state))
+                            (nil-state nil)))))))))
+
+
+;; (-> pchoice (&rest parser-fn) parser-fn)
+;; (defun pchoice (&rest parsers)
+;;   (with-state
+;;     ))
 
 ;; (declaim (type parser-fn pnum))
 ;; (defvar pnum

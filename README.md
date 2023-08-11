@@ -12,18 +12,7 @@ Yet Another Parser Combinator Library.
 
 `pchar` Parse a character
 
-`pcharexcept` Parse any character except the character
-
-`pmany` Parse in serial
-
-`pchoice` Either/or parser
-
-`poptional` Parse optionally 
-
-`pstring` Attempt to parse a specific string
-`p+` Parse one or more of
-
-`p*` Parse zero or more of
+`plet*` Like let* but each body of the binding is a parser-fn that is applied to the state.
 
 ## Testing
 `(asdf:test-system :combray)`

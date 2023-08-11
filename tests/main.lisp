@@ -112,3 +112,13 @@ ex"))
       (is (= column 2))
       (is (equal remaining (list #\e #\s #\t))))))
 
+(test plet-pass-and-fail
+      (let* ((input (prepare-string-for-parsing "test"))
+             (pass (funcall (plet* ((c1 (pchar #\t))
+                                    (c2 (pconcat (pchar #\e)
+                                                 (pchar #\s))))
+                              (list c1 c2))
+                            input)))
+        (is (= (line pass) 1))
+        (is (= (column pass) 4))
+        (is (equal (result pass) (list #\t (list #\e #\s))))))
