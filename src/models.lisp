@@ -5,15 +5,14 @@
            #:nil-state
            #:make-t-state
            #:make-nil-state
-           #:make-node
+           #:parser-state
            #:with-state
-           #:content
-           #:tag
            #:remaining
            #:line
+           #:column
+           #:message
            #:result
-           #:last-result
-           #:update-last-result))
+           #:parser-fn))
 
 (in-package :combray/models)
 
@@ -25,35 +24,6 @@
 (defun char-list-p (xs)
   (every (lambda (x) (typep x 'character)) xs))
 
-;; Nodes
-(defclass node ()
-  ((tag
-    :initarg :tag
-    :accessor tag
-    :type keyword)
-   (content
-    :initarg :content
-    :accessor content)))
-
-(-> make-node (keyword t) node)
-(defun make-node (tag content)
-  (make-instance 'node :tag tag :content content))
-
-(defmethod print-object ((obj node) stream)
-  (print-unreadable-object (obj stream :type t)
-    (with-accessors ((tag tag)
-                     (content content))
-        obj
-      (format stream "~%TAG: ~a~%CONTENT: ~a" tag content))))
-
-(deftype node-list ()
-  `(satisfies node-list-p))
-
-(-> node-list-p (t) boolean)
-(defun node-list-p (xs)
-  (and (consp xs)
-       (every (lambda (x) (typep x 'node)) xs)))
-
 ;; Parser state
 ;; Nil for error, t for success
 (defclass p-state ()
@@ -61,48 +31,59 @@
     :initarg :line
     :accessor line
     :type number)
+   (column
+    :initarg :column
+    :accessor column
+    :type number)
    (remaining
     :initarg :remaining
     :accessor remaining
     :type char-list)))
 
 (defclass nil-state (p-state)
-  ((msg
-    :initarg :msg
-    :accessor msg
+  ((message
+    :initarg :message
+    :accessor message
     :type string)))
 
 (defclass t-state (p-state)
   ((result
     :initarg :result
-    :accessor result
-    :type node-list)))
+    :accessor result)))
 
 (deftype parser-state ()
   `(or t-state nil-state))
 
 (defmethod print-object ((obj nil-state) stream)
       (print-unreadable-object (obj stream :type t)
-        (with-accessors ((msg msg)
-                         (line line))
+        (with-accessors ((message message)
+                         (line line)
+                         (column column))
             obj
-          (format stream "~a" msg))))
+          (format stream "Line ~a Column ~a:~% ~a" line column message))))
 
 (defmethod print-object ((obj t-state) stream)
       (print-unreadable-object (obj stream :type t)
         (with-accessors ((remaining remaining)
+                         (column column)
                          (line line)
                          (result result))
             obj
-          (format stream "~%Line: ~a~%Remaining: ~a~%Result: ~a" line remaining result))))
+          (format stream "Line: ~a Column ~a~%Remaining: ~a~%Result: ~a" line column remaining result))))
 
-(-> make-t-state (number char-list list) t-state)
-(defun make-t-state (line remaining result)
-  (make-instance 't-state :line line :remaining remaining :result result))
+(-> make-t-state (number number char-list t) t-state)
+(defun make-t-state (line column remaining result)
+  (make-instance 't-state :line line
+                          :column column
+                          :remaining remaining
+                          :result result))
 
-(-> make-nil-state (number char-list string) nil-state)
-(defun make-nil-state (line remaining msg)
-  (make-instance 'nil-state :line line :remaining remaining :msg msg))
+(-> make-nil-state (number number char-list string) nil-state)
+(defun make-nil-state (line column remaining message)
+  (make-instance 'nil-state :line line
+                            :column column
+                            :remaining remaining
+                            :message message))
 
 ;; Parser functions
 (deftype parser-fn ()
@@ -118,31 +99,6 @@
 ;; TODO a stream version
 (-> read-in (string) t-state)
 (defun prepare-string-for-parsing (str)
-  (make-t-state 1 (coerce str 'list) nil))
+  (make-t-state 1 1 (coerce str 'list) nil))
 
 ;; uiop:read-file-string to get the string from a file
-
-(defmacro with-state (&body body)
-  "Anaphoric macro that does all the railroading logic for you"
-  `(lambda (state)
-     (etypecase-of parser-state state
-       (nil-state state)
-       (t-state
-        ,@body))))
-
-(-> replace-tag (keyword node) node)
-(defun replace-tag (tag node)
-  (make-node tag (content node)))
-
-(-> last-result (parser-state) node)
-(defun last-result (state)
-  (funcall (tactile:compose #'result #'last #'first) state))
-
-(-> modify-last-result (t) parser-fn)
-(defun update-last-result (fn)
-  (with-state
-    (make-t-state
-     (line state)
-     (remaining state)
-     (append (butlast (result state)) (list (funcall fn (last-result state)))))))
-

@@ -2,7 +2,7 @@
   :version "0.1.0"
   :author ""
   :license ""
-  :depends-on (:serapeum :tactile)
+  :depends-on (:serapeum)
   :serial T
   :components ((:module "src"
                 :components
@@ -14,8 +14,7 @@
 (defsystem #:combray/tests
   :author ""
   :license ""
-  :depends-on ("combray"
-               "fiveam")
+  :depends-on (:combray :fiveam :serapeum)
   :serial T
   :components ((:module "tests"
                 :components

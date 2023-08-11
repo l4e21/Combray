@@ -11,130 +11,104 @@
 (defun debug-combray-suite ()
   (fiveam:debug! 'combray-suite))
 
-(test prepare-string 
+(test prepare-string
   (let ((output (prepare-string-for-parsing "test")))
     (is
      (and
       (typep output 't-state)
-      (with-slots ((line models::line)
-                   (remaining models::remaining)
-                   (result models::result))
+      (with-accessors ((line line)
+                       (column column)
+                       (remaining remaining)
+                       (result result))
           output
         (and
          (= line 1)
+         (= column 1)
          (equal remaining (list #\t #\e #\s #\t))
          (not result)))))))
 
-(test update-last-result
-  (is (eql :num
-           (tag (last-result (funcall (update-last-result (tactile:partial #'replace-tag :num))
-                                      (make-t-state 1 (list #\a #\b) (list (make-node :char (list #\1))))))))))
+(test pchar-pass
+  (let* ((input (prepare-string-for-parsing "test"))
+         (output (funcall (pchar #\t) input)))
+    (is (typep output 't-state))
+    (with-slots ((line line)
+                 (column column)
+                 (remaining remaining)
+                 (result result))
+        output
+      (is (= line 1))
+      (is (= column 2))
+      (is (equal remaining (list #\e #\s #\t)))
+      (is (char= result #\t)))))
 
+(test pchar-fail-expected
+  (let* ((input (prepare-string-for-parsing "est"))
+         (output (funcall (pchar #\t) input)))
+    (is (typep output 'nil-state))
+    (with-slots ((line line)
+                 (column column)
+                 (remaining remaining))
+        output
+      (is (= line 1))
+      (is (= column 1))
+      (is (equal remaining (list #\e #\s #\t))))))
 
-(test pchar
-  (is (typep (funcall (pchar #\a)
-                      (make-t-state 1 (list #\a #\b) nil))
-             't-state))
-  (is (typep (funcall (pchar #\a)
-                      (make-t-state 1 (list #\b #\a) nil))
-             'nil-state)))
+(test pchar-fail-eof
+  (let* ((input (prepare-string-for-parsing ""))
+         (output (funcall (pchar #\t) input)))
+    (is (typep output 'nil-state))
+    (with-slots ((line line)
+                 (column column)
+                 (message message))
+        output
+      (is (= line 1))
+      (is (= column 1))
+      (is (string= message "EOF")))))
 
-(test pcharexcept
-  (is (typep (funcall (pcharexcept #\a)
-                      (make-t-state 1 (list #\b #\a) nil))
-             't-state))
-  (is (typep (funcall (pcharexcept #\a)
-                      (make-t-state 1 (list #\a #\b) nil))
-             'nil-state)))
+(test pchar-newline
+  (let* ((input (prepare-string-for-parsing "
+ex"))
+         (output (funcall (pchar #\linefeed) input)))
+    (is (typep output 't-state))
+    (with-slots ((line line)
+                 (column column)
+                 (remaining remaining)
+                 (result result))
+        output
+      (is (= line 2))
+      (is (= column 1))
+      (is (char= result #\linefeed)))))
 
-(test pmany
-  (let ((parser (pmany (list (pchar #\a) (pchar #\linefeed)))))
-    (is (and
-         (let ((r1
-                 (funcall parser (make-t-state 1 (list #\a #\linefeed) nil))))
-           (and (typep r1 't-state)
-                (= 2 (models::line r1))))
-         (typep
-          (funcall parser (make-t-state 1 (list #\a #\b) nil))
-          'nil-state)))))
+(test pconcat
+  (let* ((input (prepare-string-for-parsing "test"))
+         (pass (funcall (pconcat
+                         (pchar #\t)
+                         (pchar #\e)
+                         (pchar #\s))
+                        input))
+         (fail (funcall (pconcat
+                         (pchar #\t)
+                         (pchar #\t)
+                         (pchar #\s))
+                        input)))
+    (is (typep pass 't-state))
+    (with-slots ((line line)
+                 (column column)
+                 (remaining remaining)
+                 (result result))
+        pass
+      (is (= line 1))
+      (is (= column 4))
+      (is (equal remaining (list #\t)))
+      (is (equal result (list #\t #\e #\s))))
 
-(test pchoice
-  (let ((parser (pchoice (list (pchar #\a) (pchar #\b)))))
-    (is (and
-         (typep
-          (funcall parser (make-t-state 1 (list #\b #\c) nil))
-          't-state)
-         (typep
-          (funcall parser (make-t-state 1 (list #\c #\b) nil))
-          'nil-state)))))
+    (is (typep fail 'nil-state))
+    (with-slots ((line line)
+                 (column column)
+                 (remaining remaining)
+                 (result result))
+        fail
+      (is (= line 1))
+      (is (= column 2))
+      (is (equal remaining (list #\e #\s #\t))))))
 
-(test ptag
-  (let* ((parser (ptag :string (pmany (list (pchar #\h)
-                                            (pchar #\i)))))
-         (r1
-           (funcall parser (make-t-state 1 (list #\h #\i #\t) nil))))
-    (is
-     (and (typep r1 't-state)
-          (models::result r1)
-          (equal :string (models::tag (car (models::result r1))))))))
-
-(test ptagd
-  (let* ((parser (ptagd :string (pmany (list (pchar #\h)
-                                             (pchar #\i)))))
-         (parser-2 (ptagd :string (pstring "hi")))
-         (r1
-           (funcall parser (make-t-state 1 (list #\h #\i #\t) nil)))
-         (r2
-           (funcall parser-2 (make-t-state 1 (list #\h #\i #\t) nil))))
-    (is
-     (and (typep r1 't-state)
-          (models:result r1)
-          (equal :string (models:tag (car (models:result r1))))))
-    (is (equal (list #\h #\i) (models:content (car (models:result r1)))))
-    (is (string= "hi" (models:content (car (models:result r2)))))))
-
-(test poptional
-  (let ((example (funcall (poptional (pchar #\h))
-                          (make-t-state 1 (list #\a) nil))))
-    (is (equal (list #\a) (models:remaining example)))))
-
-(test pstring
-  (let ((example (funcall (pstring "hi")
-                          (make-t-state 1 (list #\h #\i #\t #\h #\e #\r #\e) nil))))
-    (is (equal "hi" (models:content (models:last-result example))))))
-
-(test int
-  (let ((example (funcall pint (make-t-state 1 (list #\0 #\1 #\2) nil))))
-    (is (eql :number (tag (models:last-result example))))
-    (is (= 12 (content (models:last-result example))))))
-
-(test parse-bool
-  (let ((example (models:last-result
-                  (funcall pbool
-                           (prepare-string-for-parsing "false")))))
-    (is (not
-         (content
-          example)))
-    (is (eql :bool (tag example)))))
-
-(test psym
-  (let ((example (models:last-result
-                  (funcall psym
-                           (prepare-string-for-parsing "false")))))
-    (is (eql :sym (tag example)))))
-
-(test pnoresult-and-parens
-  (let ((example (funcall (pwithparens (pchar #\a)) (prepare-string-for-parsing "(a)"))))
-    (is (not (models:remaining example)))
-    (is (eql :char (tag (models:last-result example))))))
-
-
-(test preplacetag
-  (let ((example (funcall (preplacetag :directive psym) (prepare-string-for-parsing "directive"))))
-    (is (eql :directive (tag (models:last-result example))))
-    (is (eql 'directive (content (models:last-result example))))))
-
-(test pwithwhitespace
-  (let ((example (funcall (pmanywords (list (pstring "hi") (pstring "there")))
-                          (prepare-string-for-parsing "hi  there  you "))))
-    (is (eql 'models::t-state (class-name (class-of example))))))
