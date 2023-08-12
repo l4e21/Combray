@@ -1,2 +1,2 @@
 (defpackage combray/tests
-  (:use :cl :fiveam :combray/models :combray/combinators :serapeum))
+  (:use :cl :fiveam  :serapeum :combray/models :combray/combinators :combray/primitives))

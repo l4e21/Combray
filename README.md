@@ -12,7 +12,7 @@ Yet Another Parser Combinator Library.
 
 `pchar` Parse a character
 
-`plet*` Like let* but each body of the binding is a parser-fn that is applied to the state.
+`plet*` Like let* but each body of the binding is a parser-fn that is applied to the state subsequently, the body is what will be contained in the result (should all the parsers pass)
 
 ## Testing
 `(asdf:test-system :combray)`

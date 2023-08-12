@@ -7,8 +7,9 @@
   :components ((:module "src"
                 :components
                 ((:file "models")
-                 (:file "combinators"))))
-  :description ""
+                 (:file "combinators")
+                 (:file "primitives"))))
+  :description "Yet Another Parser Combinator Library"
   :in-order-to ((test-op (test-op "combray/tests"))))
 
 (defsystem #:combray/tests
