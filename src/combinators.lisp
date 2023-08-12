@@ -2,11 +2,11 @@
   (:use :cl :serapeum :combray/models)
   (:export
    #:state
+   #:pchar
    #:with-state
    #:defparser
-   #:pchar
-   #:pconcat
    #:plet*
+   #:pconcat
    #:pchoice
    #:p*
    #:p+
@@ -16,8 +16,9 @@
    #:pfollowedby
    #:pprecededby
    #:palways
-   #:puntil
+   #:pnot
    #:pexcept
+   #:puntil
    #:preturn))
 
 (in-package :combray/combinators)
@@ -203,11 +204,24 @@
      (let ((p-result (funcall (palways) state)))
        (funcall (puntil parser (append acc (list (result p-result)))) p-result)))))
 
+(-> pnot (parser-fn) parser-fn)
+(defparser pnot (parser)
+  (let ((p-result (funcall parser state)))
+    (etypecase-of parser-state p-result
+      (t-state (make-nil-state
+                line
+                column
+                remaining
+                (format nil "Unexpectedly parsed ~a" (result p-result))))
+      (nil-state state))))
+
 (-> pexcept (parser-fn) parser-fn)
 (defparser pexcept (parser)
-  (etypecase-of parser-state (funcall parser state)
-    (t-state state)
-    (nil-state (funcall (palways) state))))
+  (funcall
+   (plet* ((r1 (pnot parser))
+           (r2 (palways)))
+     r2)
+   state))
 
 (-> preturn (t) parser-fn)
 (defparser preturn (x)

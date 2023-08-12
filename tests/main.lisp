@@ -216,6 +216,11 @@ ex"))
     (is (typep pass 't-state))
     (is (equal (result pass) (list #\b #\b)))))
 
+(test pnot-fail
+  (let* ((input (prepare-string-for-parsing "bbab"))
+         (pass (funcall (pexcept (pchar #\b)) input)))
+    (is (typep pass 'nil-state))))
+
 (test pexcept-pass
   (let* ((input (prepare-string-for-parsing "bbab"))
          (pass (funcall (pexcept (pchar #\a)) input)))

@@ -25,7 +25,9 @@ Yet Another Parser Combinator Library with a modern DSL for writing custom parse
 `pbetween` Takes 3 parsers, and returns the result of the second
 `poptional` parses but does not fail if there is a failure
 `pfollowedby` parses, ensuring the second parser passes but only returning the first result
+`pprecededby` parses, ensuring the first parser passes but only returning the second result
 `palways` parses anything except EOF
+`pnot` returns state unless the parser passes, which results in a fail
 `pexcept` parses a character unless the given parser passes
 `puntil` parses into a list (using palways) until the given parser passes
 `preturn` returns t-state with a given bit of data
