@@ -13,6 +13,7 @@ Yet Another Parser Combinator Library with a modern DSL for writing custom parse
 `puppercase` parses an uppercase letter
 `plowercase` parses a lowercase letter
 `pletter` parses any letter
+`pword` parses a string of letters
 `pcommasep` parses comma-separated values (like in json) 
 
 ## Parser Combinators

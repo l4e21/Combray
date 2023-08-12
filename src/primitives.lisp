@@ -8,7 +8,8 @@
            #:pletter
            #:pwhitespace*
            #:pwhitespace+
-           #:pcommasep))
+           #:pcommasep
+           #:pword))
 
 (in-package :combray/primitives)
 
@@ -142,4 +143,11 @@
      (pfollowedby parser (pconcat (pchar #\,)
                                   (pwhitespace*)))
      (pfollowedby parser (pwhitespace*))))
+   state))
+
+(-> pword () parser-fn)
+(defparser pword ()
+  (funcall
+   (plet* ((word (p+ (pletter))))
+     (coerce word 'string))
    state))

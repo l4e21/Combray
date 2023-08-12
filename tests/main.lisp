@@ -300,6 +300,13 @@ ex"))
     (is (= (column pass) 8))
     (is (equal (result pass) '(#\a #\b #\c)))))
 
+(test pword
+  (let* ((input (prepare-string-for-parsing "abc"))
+         (pass (funcall (pword) input)))
+    (is (= (line pass) 1))
+    (is (= (column pass) 4))
+    (is (equal (result pass) "abc"))))
+
 ;;
 ;; Simplified JSON Example
 ;;
