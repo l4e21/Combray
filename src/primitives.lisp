@@ -9,7 +9,8 @@
            #:pwhitespace*
            #:pwhitespace+
            #:pcommasep
-           #:pword))
+           #:pword
+           #:pexactly))
 
 (in-package :combray/primitives)
 
@@ -150,4 +151,12 @@
   (funcall
    (plet* ((word (p+ (pletter))))
      (coerce word 'string))
+   state))
+
+(-> pexactly (string) parser-fn)
+(defparser pexactly (s)
+  (funcall
+   (plet* ((r1
+            (apply #'pconcat (mapcar #'pchar (coerce s 'list)))))
+     (coerce r1 'string))
    state))

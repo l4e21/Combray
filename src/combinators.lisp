@@ -230,4 +230,3 @@
    column
    remaining
    x))
-

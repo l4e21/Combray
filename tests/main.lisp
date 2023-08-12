@@ -300,9 +300,16 @@ ex"))
     (is (= (column pass) 8))
     (is (equal (result pass) '(#\a #\b #\c)))))
 
-(test pword
+(test pword-pass
   (let* ((input (prepare-string-for-parsing "abc"))
          (pass (funcall (pword) input)))
+    (is (= (line pass) 1))
+    (is (= (column pass) 4))
+    (is (equal (result pass) "abc"))))
+
+(test pexactly-pass
+  (let* ((input (prepare-string-for-parsing "abc"))
+         (pass (funcall (pexactly "abc") input)))
     (is (= (line pass) 1))
     (is (= (column pass) 4))
     (is (equal (result pass) "abc"))))
