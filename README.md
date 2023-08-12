@@ -1,6 +1,6 @@
 # Combray
 
-Yet Another Parser Combinator Library.
+Yet Another Parser Combinator Library with a modern DSL for writing custom parsers.
 
 --- 
 
@@ -23,6 +23,8 @@ Yet Another Parser Combinator Library.
 `p+` Parses one or more
 `pnoresult` Parses and then returns nil in the result
 `pbetween` Takes 3 parsers, and returns the result of the second
+`poptional` parses but does not fail if there is a failure
+`pfollowedby` parses, ensuring the second parser passes but only returning the first result
 
 ## Writing Parsers
 

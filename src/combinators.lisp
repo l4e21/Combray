@@ -158,6 +158,7 @@
       (t-state p-result)
       (nil-state state))))
 
+(-> pfollowedby (parser-fn parser-fn) parser-fn)
 (defparser pfollowedby (parser-1 parser-2)
   (funcall (plet* ((r1 parser-1)
                    (r2 parser-2))

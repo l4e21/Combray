@@ -1,7 +1,7 @@
 (defsystem #:combray
   :version "0.1.0"
-  :author ""
-  :license ""
+  :author "l4e21"
+  :license "MIT"
   :depends-on (:serapeum)
   :serial T
   :components ((:module "src"
@@ -13,8 +13,8 @@
   :in-order-to ((test-op (test-op "combray/tests"))))
 
 (defsystem #:combray/tests
-  :author ""
-  :license ""
+  :author "l4e21"
+  :license "MIT"
   :depends-on (:combray :fiveam :serapeum)
   :serial T
   :components ((:module "tests"
