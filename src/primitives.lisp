@@ -37,16 +37,18 @@
 (-> pbool () parser-fn)
 (defparser pbool ()
   (funcall
-   (pchoice
-    (pconcat (pchar #\t)
-             (pchar #\r)
-             (pchar #\u)
-             (pchar #\e))
-    (pconcat (pchar #\f)
-             (pchar #\a)
-             (pchar #\l)
-             (pchar #\s)
-             (pchar #\e)))
+   (plet*
+       ((r1 (pchoice
+             (pconcat (pchar #\t)
+                      (pchar #\r)
+                      (pchar #\u)
+                      (pchar #\e))
+             (pconcat (pchar #\f)
+                      (pchar #\a)
+                      (pchar #\l)
+                      (pchar #\s)
+                      (pchar #\e)))))
+     (coerce r1 'string))
    state))
 
 (-> plowercase () parser-fn)
