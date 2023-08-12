@@ -179,6 +179,43 @@ ex"))
     (is (typep pass 't-state))
     (is (equal (result pass) #\t))))
 
+(test poptional-pass
+  (let* ((input (prepare-string-for-parsing "(a)"))
+         (pass (funcall (poptional (pchar #\t))
+                        input)))
+    (is (typep pass 't-state))
+    (is (equal (result pass) nil))))
+
+(test pfollowedby-pass
+  (let* ((input (prepare-string-for-parsing "a("))
+         (pass (funcall (pfollowedby (pchar #\a) (pchar #\())
+                        input)))
+    (is (typep pass 't-state))
+    (is (equal (result pass) #\a))))
+
+(test pprecededby-pass
+  (let* ((input (prepare-string-for-parsing "a("))
+         (pass (funcall (pprecededby (pchar #\a) (pchar #\())
+                        input)))
+    (is (typep pass 't-state))
+    (is (equal (result pass) #\())))
+
+(test palways-pass-and-fail
+  (let* ((input-1 (prepare-string-for-parsing "a"))
+         (input-2 (prepare-string-for-parsing ""))
+         (pass (funcall (palways) input-1))
+         (fail (funcall (palways) input-2)))
+    (is (typep pass 't-state))
+    (is (equal (result pass) #\a))
+
+    (is (typep fail 'nil-state))))
+
+(test puntil
+  (let* ((input (prepare-string-for-parsing "bbab"))
+         (pass (funcall (puntil (pchar #\a)) input)))
+    (is (typep pass 't-state))
+    (is (equal (result pass) (list #\b #\b)))))
+
 ;;
 ;; Primitives
 ;;
@@ -240,8 +277,7 @@ ex"))
 
 (test pcommasep-pass
   (let* ((input (prepare-string-for-parsing "a,b, c "))
-         (pass (funcall (pcommasep (pletter))
-                        input)))
+         (pass (funcall (pcommasep (pletter)) input)))
     (is (= (line pass) 1))
     (is (= (column pass) 8))
     (is (equal (result pass) '(#\a #\b #\c)))))
@@ -290,5 +326,4 @@ ex"))
 (test json-pass
   (let* ((json-1 (prepare-string-for-parsing "{1:{11 : [{3: 5}, 3,5]}}"))
          (pass-1 (funcall (json) json-1)))
-    (pprint pass-1)
     (is (typep pass-1 't-state))))

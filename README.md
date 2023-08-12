@@ -25,7 +25,9 @@ Yet Another Parser Combinator Library with a modern DSL for writing custom parse
 `pbetween` Takes 3 parsers, and returns the result of the second
 `poptional` parses but does not fail if there is a failure
 `pfollowedby` parses, ensuring the second parser passes but only returning the first result
-
+`palways` parses anything except EOF
+`puntil` parses into a list (using palways) until the given parser passes
+ 
 ## Writing Parsers
 
 `prepare-string-for-parsing` turns a string into a state that is ready for parsing.

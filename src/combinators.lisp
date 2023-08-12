@@ -13,7 +13,10 @@
    #:pnoresult
    #:pbetween
    #:poptional
-   #:pfollowedby))
+   #:pfollowedby
+   #:pprecededby
+   #:palways
+   #:puntil))
 
 (in-package :combray/combinators)
 
@@ -164,3 +167,36 @@
                    (r2 parser-2))
              r1)
            state))
+
+(-> pprecededby (parser-fn parser-fn) parser-fn)
+(defparser pprecededby (parser-1 parser-2)
+  (funcall (plet* ((r1 parser-1)
+                   (r2 parser-2))
+             r2)
+           state))
+
+(-> palways () parser-fn)
+(defparser palways ()
+  (cond
+    ((not remaining)
+     (make-nil-state line
+                     column
+                     remaining
+                     "EOF"))
+    (t
+     (make-t-state line
+                   column
+                   (rest remaining)
+                   (first remaining)))))
+
+(-> puntil (parser-fn) parser-fn)
+(defparser puntil (parser &optional acc)
+  (etypecase-of parser-state (funcall parser state)
+    (t-state (make-t-state
+              line
+              column
+              remaining
+              acc))
+    (nil-state
+     (let ((p-result (funcall (palways) state)))
+       (funcall (puntil parser (append acc (list (result p-result)))) p-result)))))
