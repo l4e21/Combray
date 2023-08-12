@@ -26,7 +26,9 @@ Yet Another Parser Combinator Library with a modern DSL for writing custom parse
 `poptional` parses but does not fail if there is a failure
 `pfollowedby` parses, ensuring the second parser passes but only returning the first result
 `palways` parses anything except EOF
+`pexcept` parses a character unless the given parser passes
 `puntil` parses into a list (using palways) until the given parser passes
+`preturn` returns t-state with a given bit of data
  
 ## Writing Parsers
 

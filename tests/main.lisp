@@ -216,6 +216,19 @@ ex"))
     (is (typep pass 't-state))
     (is (equal (result pass) (list #\b #\b)))))
 
+(test pexcept-pass
+  (let* ((input (prepare-string-for-parsing "bbab"))
+         (pass (funcall (pexcept (pchar #\a)) input)))
+    (is (typep pass 't-state))
+    (is (equal (result pass) #\b))))
+
+(test preturn-pass
+  (let* ((input (prepare-string-for-parsing "test"))
+         (pass (funcall (preturn "blah") input)))
+    (is (typep pass 't-state))
+    (is (equal (remaining pass) (list #\t #\e #\s #\t)))
+    (is (equal (result pass) "blah"))))
+
 ;;
 ;; Primitives
 ;;

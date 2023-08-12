@@ -16,7 +16,9 @@
    #:pfollowedby
    #:pprecededby
    #:palways
-   #:puntil))
+   #:puntil
+   #:pexcept
+   #:preturn))
 
 (in-package :combray/combinators)
 
@@ -200,3 +202,18 @@
     (nil-state
      (let ((p-result (funcall (palways) state)))
        (funcall (puntil parser (append acc (list (result p-result)))) p-result)))))
+
+(-> pexcept (parser-fn) parser-fn)
+(defparser pexcept (parser)
+  (etypecase-of parser-state (funcall parser state)
+    (t-state state)
+    (nil-state (funcall (palways) state))))
+
+(-> preturn (t) parser-fn)
+(defparser preturn (x)
+  (make-t-state
+   line
+   column
+   remaining
+   x))
+
