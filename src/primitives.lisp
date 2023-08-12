@@ -5,7 +5,8 @@
            #:pbool
            #:puppercase
            #:plowercase
-           #:pletter))
+           #:pletter
+           #:pwhitespace))
 
 (in-package :combray/primitives)
 
@@ -102,3 +103,7 @@
 (declaim (type pletter parser-fn))
 (defvar pletter
   (pchoice (list puppercase plowercase)))
+
+(declaim (type pwhitespace parser-fn))
+(defvar pwhitespace
+  (pnoresult (p+ (pchar #\Space))))

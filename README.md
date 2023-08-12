@@ -32,3 +32,11 @@ Yet Another Parser Combinator Library.
 
 ## Testing
 `(asdf:test-system :combray)`
+
+
+## TODO
+
+- Add debugging middleware (add tags, add history)
+- Add more primitives
+- Add more combinators
+- Provide more examples/docs

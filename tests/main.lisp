@@ -183,23 +183,30 @@ ex"))
 ;; Primitives
 ;;
 
-(test pnumber
+(test pnumber-pass
   (let* ((input (prepare-string-for-parsing "123"))
          (pass (funcall pnumber input)))
     (is (= (line pass) 1))
     (is (= (column pass) 2))
     (is (equal (result pass) #\1))))
 
-(test pinteger
+(test pinteger-pass
   (let* ((input (prepare-string-for-parsing "123"))
          (pass (funcall pinteger input)))
     (is (= (line pass) 1))
     (is (= (column pass) 4))
     (is (equal (result pass) (list #\1 #\2 #\3)))))
 
-(test pbool
+(test pbool-pass
   (let* ((input (prepare-string-for-parsing "true"))
          (pass (funcall pbool input)))
     (is (= (line pass) 1))
     (is (= (column pass) 5))
     (is (equal (result pass) (list #\t #\r #\u #\e)))))
+
+(test pwhitespace-pass
+  (let* ((input (prepare-string-for-parsing "  true"))
+         (pass (funcall pwhitespace input)))
+    (is (= (line pass) 1))
+    (is (= (column pass) 3))
+    (is (equal (result pass) nil))))
