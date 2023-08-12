@@ -204,9 +204,90 @@ ex"))
     (is (= (column pass) 5))
     (is (equal (result pass) (list #\t #\r #\u #\e)))))
 
-(test pwhitespace-pass
+(test pwhitespace+-pass
   (let* ((input (prepare-string-for-parsing "  true"))
-         (pass (funcall pwhitespace input)))
+         (pass (funcall pwhitespace+ input)))
     (is (= (line pass) 1))
     (is (= (column pass) 3))
     (is (equal (result pass) nil))))
+
+(test pwhitespace*-pass
+  (let* ((input (prepare-string-for-parsing "true"))
+         (pass (funcall pwhitespace* input)))
+    (is (= (line pass) 1))
+    (is (= (column pass) 1))
+    (is (equal (result pass) nil))))
+
+(test plowercase-pass
+  (let* ((input (prepare-string-for-parsing "true"))
+         (pass (funcall plowercase input)))
+    (is (= (line pass) 1))
+    (is (= (column pass) 2))
+    (is (equal (result pass) #\t))))
+
+(test puppercase-pass
+  (let* ((input (prepare-string-for-parsing "TRUE"))
+         (pass (funcall puppercase input)))
+    (is (= (line pass) 1))
+    (is (= (column pass) 2))
+    (is (equal (result pass) #\T))))
+
+(test pletter-pass
+  (let* ((input (prepare-string-for-parsing "true"))
+         (pass (funcall pletter input)))
+    (is (= (line pass) 1))
+    (is (= (column pass) 2))))
+
+(test pcommasep-pass
+  (let* ((input (prepare-string-for-parsing "a,b, c "))
+         (pass (funcall (pcommasep pletter)
+                        input)))
+    (is (= (line pass) 1))
+    (is (= (column pass) 8))
+    (is (equal (result pass) '(#\a #\b #\c)))))
+
+;;
+;; Simplified JSON Example
+;;
+
+(defpackage :combray/tests/json/parser
+  (:use :cl :fiveam  :serapeum :combray/models :combray/combinators :combray/primitives))
+
+(in-package :combray/tests/json/parser)
+
+(defparser json-vector ()
+  (funcall
+   (pbetween (pchar #\[)
+             (pcommasep (json))
+             (pchar #\]))
+   state))
+
+(defparser kv ()
+  (funcall
+   (pconcat pinteger
+            (pnoresult (pconcat
+                        (pwhitespace*)
+                        (pchar #\:)
+                        (pwhitespace*)))
+            (json))
+   combray/combinators::state))
+
+(defparser json-kv ()
+  (funcall
+   (pbetween (pchar #\{)
+             (kv)
+             (pchar #\}))
+   combray/combinators::state))
+
+(defparser json ()
+  (funcall
+   (pchoice
+    (json-kv)
+    (json-vector)
+    (pinteger))
+   combray/combinators::state))
+
+(test json-pass
+  (let* ((json-1 (prepare-string-for-parsing "{1:{11 : [{3: 5}, 3,5]}}"))
+         (pass-1 (funcall (json) json-1)))
+    (is (typep pass-1 't-state))))
