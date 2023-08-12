@@ -12,6 +12,8 @@ Yet Another Parser Combinator Library.
 `pbool` parses a bool
 `puppercase` parses an uppercase letter
 `plowercase` parses a lowercase letter
+`pletter` parses any letter
+`pcommasep` parses comma-separated values (like in json) 
 
 ## Parser Combinators
 
@@ -22,11 +24,13 @@ Yet Another Parser Combinator Library.
 `pnoresult` Parses and then returns nil in the result
 `pbetween` Takes 3 parsers, and returns the result of the second
 
-## Useful Tools for Writing Parsers
+## Writing Parsers
 
 `prepare-string-for-parsing` turns a string into a state that is ready for parsing.
 
 `with-state` anaphoric macro that provides a closure with a state variable for easy error railroading
+
+`defparser` defines a function that puts your body into a `with-state`
 
 `plet*` A macro that works like let* but each body of the binding is a parser-fn that is applied to the state subsequently, the body is what will be contained in the result (should all the parsers pass)
 
